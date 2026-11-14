@@ -1,0 +1,42 @@
+<main class="auth-layout">
+  <section class="auth-story">
+    <a class="brand" routerLink="/login"><span class="brand-mark">L</span> Shelfwise</a>
+    <div class="story-copy">
+      <span class="eyebrow">A quieter kind of productivity</span>
+      <h1>Every good story<br>starts <em>somewhere.</em></h1>
+      <p>Your library, thoughtfully organized. Find your next favorite and keep every borrowed book in its place.</p>
+      <div class="story-note"><span class="note-icon">✳</span><span>“A library is not a luxury but one of the necessities of life.”<small>— Henry Ward Beecher</small></span></div>
+    </div>
+    <div class="story-footer">YOUR COMMUNITY LIBRARY · EST. 2024</div>
+  </section>
+  <section class="auth-panel">
+    <div class="auth-card">
+      <span class="eyebrow">{{ isRegister ? 'YOUR NEXT CHAPTER' : 'WELCOME BACK' }}</span>
+      <h2>{{ isRegister ? 'Create your account' : 'Sign in to your library' }}</h2>
+      <p class="auth-subtitle">{{ isRegister ? 'Join the community and start exploring.' : 'Pick up right where you left off.' }}</p>
+      @if (error) { <div class="alert" role="alert">{{ error }}</div> }
+      <form (ngSubmit)="submit()" #authForm="ngForm">
+        @if (isRegister) {
+          <label for="name">Full name</label>
+          <input id="name" name="name" [(ngModel)]="name" required minlength="2" maxlength="120" autocomplete="name" placeholder="Your name">
+        }
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" [(ngModel)]="email" required email maxlength="256" autocomplete="email" placeholder="you@example.com">
+        @if (isRegister) {
+          <label for="phone">Phone <span class="optional">OPTIONAL</span></label>
+          <input id="phone" name="phone" type="tel" [(ngModel)]="phone" maxlength="30" autocomplete="tel" placeholder="Your phone number">
+        }
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" [(ngModel)]="password" required [minlength]="isRegister ? 8 : 1" autocomplete="{{ isRegister ? 'new-password' : 'current-password' }}" placeholder="{{ isRegister ? 'At least 8 characters' : 'Enter your password' }}">
+        <button class="button button-primary submit-button" type="submit" [disabled]="authForm.invalid || busy">
+          {{ busy ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in' }} <span aria-hidden="true">→</span>
+        </button>
+      </form>
+      <p class="auth-switch">
+        {{ isRegister ? 'Already have an account?' : 'New to Shelfwise?' }}
+        <a [routerLink]="isRegister ? '/login' : '/register'">{{ isRegister ? 'Sign in' : 'Create an account' }}</a>
+      </p>
+      <p class="secure-note"><span>⌑</span> Your account and borrowing history stay private.</p>
+    </div>
+  </section>
+</main>
