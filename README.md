@@ -1,92 +1,206 @@
-# Shelfwise Library Management System
+# Shelfwise – Library Management System
 
-A full-stack library application built with Angular, ASP.NET Core, Entity Framework Core, JWT authentication, and SQL Server.
+A full-stack library management application built with **Angular**, **ASP.NET Core Web API**, **Entity Framework Core**, and **SQL Server**. Shelfwise provides separate experiences for library members and administrators to manage books and borrowing activity.
 
-## Requirements
+## Screenshots
+
+The screenshots below show the application’s authentication flow, member experience, and administrator workspace. The application is demonstrated locally; a public live demo is not currently available.
+
+### 1. Authentication
+
+| Sign in | Create an account |
+|---|---|
+| ![Shelfwise login](screenshots/01-login.png) | ![Shelfwise registration](screenshots/02-register.png) |
+
+### 2. Member experience
+
+Members can browse the library, search the collection, check availability, and view their borrowing activity.
+
+**Overview**
+
+![Member overview](screenshots/03-user-overview.png)
+
+**Book collection**
+
+![Member book collection](screenshots/04-user-book-collection.png)
+
+**Borrowing desk and borrowing history**
+
+![Member borrowing desk](screenshots/05-user-borrowing-desk.png)
+
+### 3. Administrator workspace
+
+Administrators have access to management screens for the catalogue, borrowing activity, and library members.
+
+**Admin overview**
+
+![Administrator overview](screenshots/06-admin-overview.png)
+
+**Book management**
+
+![Administrator book management](screenshots/07-admin-book-management.png)
+
+**Borrowing management**
+
+![Administrator borrowing desk](screenshots/08-admin-borrowing-desk.png)
+
+**Member management**
+
+![Administrator member management](screenshots/09-admin-members.png)
+
+## Features
+
+### Member
+- Register and sign in to a personal library account.
+- Browse and search the book catalogue.
+- View book details and copy availability.
+- Issue available books and view borrowing history.
+- Return eligible borrowed books.
+
+### Administrator
+- Access protected administrator functionality.
+- Add, edit, and delete books.
+- Search and manage library members.
+- Issue books to members and record returns.
+- Review borrowing activity and overdue books.
+
+### Application and security
+- JWT-based authentication with expiring tokens.
+- BCrypt password hashing.
+- Role-based authorization for Admin and User accounts.
+- Protected Angular routes and an HTTP interceptor for bearer tokens.
+- Inventory updates and copy-count validation during checkout and return.
+- SQL Server constraints and stored-procedure-backed overdue tracking.
+
+## Technology stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | Angular, TypeScript |
+| Backend | ASP.NET Core Web API, C# |
+| ORM / Data access | Entity Framework Core |
+| Database | Microsoft SQL Server |
+| Authentication | JWT, BCrypt |
+| API style | REST |
+
+## Project structure
+
+```text
+Library-Management-System/
+├── Backend/
+│   └── LibraryApi/             # ASP.NET Core Web API
+├── Frontend/
+│   └── library-ui/              # Angular application
+├── database/
+│   ├── schema.sql               # SQL Server schema reference
+│   ├── stored-procedures.sql    # Stored procedure reference
+│   └── seed.sql                 # Optional sample catalogue
+└── README.md
+```
+
+## Run locally
+
+### Prerequisites
 
 - .NET 10 SDK
 - Node.js 20.19+ (Node 24 recommended) and npm
 - SQL Server (Developer, Express, Standard, or another reachable SQL Server instance)
-- Angular CLI is optional; the frontend npm scripts use the locally installed CLI
+- SQL Server Management Studio (SSMS) is recommended for database administration
 
-## Project layout
+### 1. Clone the repository
 
-```text
-Backend/LibraryApi/          ASP.NET Core REST API and EF Core models
-Frontend/library-ui/         Angular standalone application
-database/schema.sql          SQL Server schema reference
-database/stored-procedures.sql
-database/seed.sql            Optional sample catalog
+```bash
+git clone https://github.com/shikharshri2002/Library-Management-System.git
+cd Library-Management-System
 ```
 
-## Configure and run
+### 2. Configure SQL Server
 
-The default connection targets `LENOVOSLIMPAD-3\SQLEXPRESS` using Windows Authentication. Update `ConnectionStrings__LibraryDatabase` in `Backend/LibraryApi/appsettings.json` if your SQL Server instance is different. Create an empty `LibraryManagement` database in SQL Server Management Studio (SSMS) first, or let the API create it if the configured login has permission to create databases. At startup, EF Core applies the tables and stored procedure to that database.
+Create an empty database named `LibraryManagement` in SQL Server Management Studio.
 
-For Windows Authentication, replace `YOUR_SERVER\\YOUR_INSTANCE` with the server and instance shown in SSMS under **Server name**:
+Set the connection string in PowerShell. Replace the server and instance with the values shown in SSMS:
 
 ```powershell
 $env:ConnectionStrings__LibraryDatabase = "Server=YOUR_SERVER\YOUR_INSTANCE;Database=LibraryManagement;Trusted_Connection=True;TrustServerCertificate=True"
 ```
 
-For SQL Server Authentication, keep the username and password out of source control and set the connection string in your terminal instead:
+For SQL Server Authentication, keep credentials out of source control and provide the connection string through environment variables instead.
 
-```powershell
-$env:ConnectionStrings__LibraryDatabase = "Server=YOUR_SERVER\YOUR_INSTANCE;Database=LibraryManagement;User ID=YOUR_SQL_LOGIN;Encrypt=True;TrustServerCertificate=True"
-$sqlPassword = Read-Host "SQL Server password"
-$env:ConnectionStrings__LibraryDatabase += ";Pass" + "word=" + $sqlPassword
-```
+The API applies Entity Framework Core migrations at startup. The configured SQL Server login must have the permissions required to connect to the database and create or update its schema.
 
-`TrustServerCertificate=True` is convenient for local development; use a trusted SQL Server certificate in production. The application login needs permission to connect to the database and create or update its schema when EF migrations run.
+### 3. Configure authentication and create the first administrator
 
-Set a private JWT signing key before deployment; the key in `appsettings.json` is for local development only.
-
-In PowerShell, set up an administrator account before the first API run:
+Set the bootstrap administrator credentials and a private JWT signing key in the same PowerShell session:
 
 ```powershell
 $env:BootstrapAdmin__Email = "admin@example.com"
 $env:BootstrapAdmin__Password = "choose-a-long-unique-password"
 $env:Jwt__Key = "replace-with-a-private-secret-at-least-32-bytes-long"
+```
+
+Run the backend:
+
+```powershell
 dotnet run --project .\Backend\LibraryApi
 ```
 
-The API applies EF Core migrations at startup. The bootstrap administrator is created only when the configured email does not already exist; public registration always creates a regular `User` account. After the administrator has been created, the bootstrap variables can be removed. Do not deploy with the development JWT key.
+The bootstrap administrator is created only if the configured email does not already exist. Public registration creates a regular User account, not an administrator.
 
-Run the API from the same PowerShell window after setting the SQL Server connection string, then run the Angular app in another PowerShell window:
+**Security note:** Use a unique, private JWT key and strong administrator password. Do not commit credentials, connection strings containing passwords, or production secrets to GitHub. The development JWT key in local configuration is not suitable for production.
+
+### 4. Run the Angular frontend
+
+Open a second PowerShell terminal:
 
 ```powershell
 Set-Location .\Frontend\library-ui
+npm install
 npm start
 ```
 
-The UI runs at `http://localhost:4200` or `http://127.0.0.1:4200`; the API's HTTP launch profile listens on `http://localhost:5160`. Add any other frontend origin to `AllowedOrigins` in API configuration. The frontend API URL is `http://localhost:5160/api`.
+Open the frontend at:
 
-## Database setup and sample data
-
-EF migrations create and update the application schema automatically on API startup. `database/schema.sql` documents the equivalent SQL Server schema for manual setup; do not run it against a database managed by the API migrations. The initial migration installs the overdue-books procedure automatically. To load the optional sample catalog into a database already created by the API, replace the server name below with your SQL Server instance:
-
-```powershell
-sqlcmd -S "YOUR_SERVER\YOUR_INSTANCE" -d LibraryManagement -E -i .\database\seed.sql
+```text
+http://localhost:4200
 ```
 
+The API's HTTP launch profile listens at:
+
+```text
+http://localhost:5160
+```
+
+The frontend API base URL is configured as `http://localhost:5160/api`. If you use a different frontend origin, add it to the API's `AllowedOrigins` configuration.
+
+## Database notes
+
+- Entity Framework Core migrations create and update the application schema when the API starts.
+- `database/schema.sql` is a reference for the SQL Server schema; do not run it against a database already managed by the API migrations.
+- The initial migration installs the overdue-books stored procedure.
+- `database/seed.sql` contains optional sample catalogue data for a database initialized by the API.
 
 ## Main API routes
 
-| Method | Route | Access |
-| --- | --- | --- |
-| POST | `/api/auth/register` | Public; creates a User account and linked member |
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/auth/register` | Public |
 | POST | `/api/auth/login` | Public |
 | GET | `/api/books?search=` | Authenticated |
 | POST, PUT, DELETE | `/api/books` | Admin |
 | GET, POST, PUT, DELETE | `/api/members` | Admin |
-| GET, POST | `/api/borrowing` | Authenticated; users can issue for themselves |
+| GET, POST | `/api/borrowing` | Authenticated |
 | POST | `/api/borrowing/{id}/return` | Record owner or Admin |
-| GET | `/api/borrowing/overdue` | Admin; calls `sp_GetOverdueBooks` |
+| GET | `/api/borrowing/overdue` | Admin |
 
-## Features
+## Future improvements
 
-- BCrypt password hashing, signed expiring JWTs, and Admin/User role authorization.
-- Role-protected Angular routes and bearer-token HTTP interceptor.
-- Searchable book catalog, member management, checkout, return, and overdue report.
-- Inventory updates on checkout/return, copy-count validation, and borrowing-history-safe deletion.
-- SQL Server constraints and stored-procedure-backed overdue tracking.
+- Deploy the frontend, API, and database to a cloud hosting environment.
+- Add a public demo environment with safe sample data.
+- Add automated tests for critical borrowing and authorization workflows.
+
+## Author
+
+**Shikhar Shrivastava**
+
+- GitHub: [@shikharshri2002](https://github.com/shikharshri2002)
+- Project repository: [Library-Management-System](https://github.com/shikharshri2002/Library-Management-System)
