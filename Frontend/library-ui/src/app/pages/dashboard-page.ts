@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
@@ -17,6 +17,7 @@ const emptyMember = (): MemberInput => ({ name: '', email: '', phone: '' });
   styleUrl: './dashboard-page.scss'
 })
 export class DashboardPage implements OnInit {
+  private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly api = inject(LibraryApiService);
   private readonly router = inject(Router);
   readonly auth = inject(AuthService);
@@ -47,29 +48,30 @@ export class DashboardPage implements OnInit {
   load(): void {
     this.loading = true;
     this.error = '';
+    this.changeDetector.markForCheck();
     if (this.section === 'dashboard' || this.section === 'books') {
       this.api.getBooks(this.section === 'books' ? this.search : '').subscribe({
-        next: (items) => { this.books = items; this.loading = false; },
+        next: (items) => { this.books = items; this.loading = false; this.changeDetector.markForCheck(); },
         error: (error: HttpErrorResponse) => this.fail(error)
       });
     }
     if (this.section === 'members') {
       this.api.getMembers(this.search).subscribe({
-        next: (items) => { this.members = items; this.loading = false; },
+        next: (items) => { this.members = items; this.loading = false; this.changeDetector.markForCheck(); },
         error: (error: HttpErrorResponse) => this.fail(error)
       });
     }
     if (this.section === 'loans') {
       this.api.getBorrowRecords().subscribe({
-        next: (items) => { this.records = items; this.loading = false; },
+        next: (items) => { this.records = items; this.loading = false; this.changeDetector.markForCheck(); },
         error: (error: HttpErrorResponse) => this.fail(error)
       });
-      this.api.getBooks().subscribe({ next: (items) => { this.books = items; }, error: (error) => this.fail(error) });
-      if (this.auth.isAdmin()) this.api.getMembers().subscribe({ next: (items) => { this.members = items; }, error: (error) => this.fail(error) });
+      this.api.getBooks().subscribe({ next: (items) => { this.books = items; this.changeDetector.markForCheck(); }, error: (error) => this.fail(error) });
+      if (this.auth.isAdmin()) this.api.getMembers().subscribe({ next: (items) => { this.members = items; this.changeDetector.markForCheck(); }, error: (error) => this.fail(error) });
     }
     if (this.section === 'overdue') {
       this.api.getOverdueBooks().subscribe({
-        next: (items) => { this.overdue = items; this.loading = false; },
+        next: (items) => { this.overdue = items; this.loading = false; this.changeDetector.markForCheck(); },
         error: (error: HttpErrorResponse) => this.fail(error)
       });
     }
@@ -169,5 +171,6 @@ export class DashboardPage implements OnInit {
   private fail(error: HttpErrorResponse): void {
     this.error = error.error?.message ?? 'The request could not be completed. Check the API connection and try again.';
     this.loading = false;
+    this.changeDetector.markForCheck();
   }
 }
